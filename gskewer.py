@@ -80,7 +80,8 @@ class gskewer(octoprint.filemanager.util.LineProcessorStream):
             print('Skipping, not a movement.', line)
             return line
         
-class GSkewerPlugin(octoprint.plugin.OctoPrintPlugin):
+class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
+                    octoprint.plugin.SettingsPlugin):
     def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
         if not octoprint.filemanager.valid_file_type(path, type="gcode"):
             return file_object
@@ -91,7 +92,14 @@ class GSkewerPlugin(octoprint.plugin.OctoPrintPlugin):
         #    return file_object
 
         return octoprint.filemanager.util.StreamWrapper(file.object.filename, GSkewer(file_object.stream(), 0, 0, 0))
-
+    
+    def get_settings_defaults(self):
+        return dict(xytan="0", yztan="0", xztan="0")
+    def get_template_vars(self):
+        return dict(xytan=self._settings.get(["xytan"]),
+                    yztan=self._settings.get(["yztan"]),
+                    xztan=self._settings.get(["xztan"]))
+    
 __plugin_name__ = "gskewer"
 __plugin_description__ = "Skews G0 and G1 commands to correct for error in each axis. Does not skew G2 or G3, so use on such gcode at your own risk."
 __plugin_pythoncompat__ = ">=3.7, <4"
