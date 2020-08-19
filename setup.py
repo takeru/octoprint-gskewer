@@ -27,7 +27,7 @@ plugin_author = "Oliver Strik"
 plugin_author_email = "oliverstrik@gmail.com"
 
 # The plugin's homepage URL. Can be overwritten within OctoPrint's internal data via __plugin_url__ in the plugin module
-plugin_url = "https://github.com/kranex/gskewer"
+plugin_url = "https://github.com/kranex/octoprint-gskewer"
 
 # The plugin's license. Can be overwritten within OctoPrint's internal data via __plugin_license__ in the plugin module
 plugin_license = "GPLv3"
