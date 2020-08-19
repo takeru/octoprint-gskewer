@@ -83,7 +83,7 @@ class gskewer(octoprint.filemanager.util.LineProcessorStream):
 
 class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.SettingsPlugin):
-    def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
+    def skew_gcode(self, path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
         if not octoprint.filemanager.valid_file_type(path, type="gcode"):
             return file_object
 
