@@ -7,25 +7,24 @@ import octoprint.filemanager.util
 
 class GSkewer(octoprint.filemanager.util.LineProcessorStream):
     def __init__(self, input_stream, xytan, yztan, zxtan):
-        super(input_stream)
+        super().__init__(input_stream)
 
         self.xytan = xytan
         self.yztan = yztan
         self.zxtan = zxtan
-	self._logger.info("TEST")
+
         if not zxtan == 0:
             print('The ZX error is set to', zxtan, 'degrees')
 
         if xytan == 0.0 and yztan == 0.0 and zxtan == 0.0:
             print('No skew parameters provided. Nothing will be done.')
 
-        filename = args.file
+        self.xin = 0.0
+        self.yin = 0.0
+        self.zin = 0.0
+        #filename = args.file
 
-        outname = re.sub(r'.gcode', '-skewed.gcode', filename)
-
-        xin = 0.0
-        yin = 0.0
-        zin = 0.0
+        #outname = re.sub(r'.gcode', '-skewed.gcode', filename)
 
         #if os.path.isfile(outname):
         #os.remove(outname)
@@ -33,53 +32,54 @@ class GSkewer(octoprint.filemanager.util.LineProcessorStream):
         #outfile = open(outname, 'a')
 
 
-    def process_line(self, line):
+    def process_line(self, encoded):
+        line = encoded.decode("utf-8")
         gmatch = re.match(r'G[0-1]', line, re.I)
         if gmatch:
-            print('line was a G0/G1 command!')
+            # print('line was a G0/G1 command!', line)
 
             # load the incoming X coordinate into a variable. Previous value will be used if new value is not found.
-            xsrch = re.search(r'[xX]\d*\.*\d*', line, re.I)
+            xsrch = re.search(r'[xX]-?\d*\.*\d*', line, re.I)
             if xsrch:  # if an X value is found
                 # Strip the letter from the coordinate.
-                xin = float(re.sub(r'[xX]', '', xsrch.group()))
+                self.xin = float(re.sub(r'[xX]', '', xsrch.group()))
 
             # load the incoming Y coordinate into a variable. Previous value will be used if new value is not found.
-            ysrch = re.search(r'[yY]\d*\.*\d*', line, re.I)
+            ysrch = re.search(r'[yY]-?\d*\.*\d*', line, re.I)
             if ysrch:
                 # Strip the letter from the coordinate.
-                yin = float(re.sub(r'[yY]', '', ysrch.group()))
+                self.yin = float(re.sub(r'[yY]', '', ysrch.group()))
 
             # load the incoming Z coordinate into a variable. Previous value will be used if new value is not found.
-            zsrch = re.search(r'[zZ]\d*\.*\d*', line, re.I)
+            zsrch = re.search(r'[zZ]-?\d*\.*\d*', line, re.I)
             if zsrch:
                 # Strip the letter from the coordinate.
-                zin = float(re.sub(r'[zZ]', '', zsrch.group()))
+                self.zin = float(re.sub(r'[zZ]', '', zsrch.group()))
 
             # calculate the corrected/skewed XYZ coordinates
-            xout = round(xin - yin * xytan, 3)
-            yout = round(yin - zin * yztan, 3)
-            xout = round(xout - zin * zxtan, 3)
+            xout = round(self.xin - self.yin * self.xytan, 3)
+            yout = round(self.yin - self.zin * self.yztan, 3)
+            xout = round(xout - self.zin * self.zxtan, 3)
             # Z coodinates must remain the same to prevent layers being tilted!
-            zout = zin
+            zout = self.zin
 
             lineout = line
-            print('old line:', lineout)
+            #print('old line:', lineout)
 
             if xsrch:
-                lineout = re.sub(r'[xX]\d*\.*\d*', 'X' + str(xout), lineout)
+                lineout = re.sub(r'[xX]-?\d*\.*\d*', 'X' + str(xout), lineout)
 
             if ysrch:
-                lineout = re.sub(r'[yY]\d*\.*\d*', 'Y' + str(yout), lineout)
+                lineout = re.sub(r'[yY]-?\d*\.*\d*', 'Y' + str(yout), lineout)
 
             if zsrch:
-                lineout = re.sub(r'[zZ]\d*\.*\d*', 'Z' + str(zout), lineout)
+                lineout = re.sub(r'[zZ]-?\d*\.*\d*', 'Z' + str(zout), lineout)
 
-            print('new line: ', lineout)
-            return lineout
+            #print('new line: ', lineout)
+            return lineout.encode("utf-8")
         else:
-            print('Skipping, not a movement.', line)
-            return line
+            #print('Skipping, not a movement.', line)
+            return encoded
 
 class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.SettingsPlugin):
@@ -91,15 +91,17 @@ class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
         #name, _ = os.path.splitext(file_object.filename)
         #if not name.endswith("_skew"):
         #    return file_object
-		
-	xytan = self._settings.get(["xytan"])
-	yztan = self._settings.get(["yztan"])
-	xztan = self._settings.get(["xztan"])
-	self._logging.info("Starting skew correction...")	
+
+        xytan = self._settings.get_float(["xytan"])
+        yztan = self._settings.get_float(["yztan"])
+        xztan = self._settings.get_float(["xztan"])
+        
+        self._logger.info("Applying skew compensation...")
+
         return octoprint.filemanager.util.StreamWrapper(file_object.filename, GSkewer(file_object.stream(), xytan, yztan, xztan))
 
     def get_settings_defaults(self):
-        return dict(xytan="0", yztan="0", xztan="0")
+        return dict(xytan=0.0, yztan=0.0, xztan=0.0)
 
     def get_template_configs(self):
         return [dict(type="settings", custom_bindings=False)]
