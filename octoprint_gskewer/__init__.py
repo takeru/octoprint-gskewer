@@ -12,7 +12,7 @@ class GSkewer(octoprint.filemanager.util.LineProcessorStream):
         self.xytan = xytan
         self.yztan = yztan
         self.zxtan = zxtan
-
+	self._logger.info("TEST")
         if not zxtan == 0:
             print('The ZX error is set to', zxtan, 'degrees')
 
