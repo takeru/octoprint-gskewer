@@ -79,22 +79,31 @@ class gskewer(octoprint.filemanager.util.LineProcessorStream):
         else:
             print('Skipping, not a movement.', line)
             return line
+        
+class GSkewerPlugin(octoprint.plugin.OctoPrintPlugin):
+    def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
+        if not octoprint.filemanager.valid_file_type(path, type="gcode"):
+            return file_object
 
-def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
-    if not octoprint.filemanager.valid_file_type(path, type="gcode"):
-        return file_object
-    
-    #import os
-    #name, _ = os.path.splitext(file_object.filename)
-    #if not name.endswith("_skew"):
-    #    return file_object
-    
-    return octoprint.filemanager.util.StreamWrapper(file.object.filename, GSkewer(file_object.stream(), 0, 0, 0))
+        #import os
+        #name, _ = os.path.splitext(file_object.filename)
+        #if not name.endswith("_skew"):
+        #    return file_object
+
+        return octoprint.filemanager.util.StreamWrapper(file.object.filename, GSkewer(file_object.stream(), 0, 0, 0))
 
 __plugin_name__ = "gskewer"
 __plugin_description__ = "Skews G0 and G1 commands to correct for error in each axis. Does not skew G2 or G3, so use on such gcode at your own risk."
 __plugin_pythoncompat__ = ">=3.7, <4"
-__plugin_hooks__ = {
-    "octoprint.filemanager.preprocessor": skew_gcode
-}
+
+def __plugin_load__():
+    plugin = GSkewerPlugin()
+    
+    global __plugin_implementation__
+    __plugin_implementation__ = plugin
+    
+    global __plugin_hooks__
+    __plugin_hooks__ = {
+        "octoprint.filemanager.preprocessor": skew_gcode
+    }
 
