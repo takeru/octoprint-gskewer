@@ -5,6 +5,7 @@ In order to use Gskewer you will need to print a test cube, take accurate measur
 
 The G-code file to be modified, the measured error (in mm), and the distance from zero where the measurement was taken is then entered into skew.py before being run.
 
+The original version of Gskewer can be found at [https://github.com/MechanizedMedic/gskewer](https://github.com/MechanizedMedic/gskewer)
 
 # Preparing to use Gskewer
 The task of measuring the error between axis pairs is shown in good detail at http://www.zs1jen.org/Station_Manuals/Reference/3D_Printers/14_RepRapPro_-_Axis_compensation.pdf
