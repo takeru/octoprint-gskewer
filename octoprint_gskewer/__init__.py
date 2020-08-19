@@ -5,7 +5,7 @@ import octoprint.plugin
 import octoprint.filemanager
 import octoprint.filemanager.util
 
-class gskewer(octoprint.filemanager.util.LineProcessorStream):
+class GSkewer(octoprint.filemanager.util.LineProcessorStream):
     def __init__(self, input_stream, xytan, yztan, zxtan):
         super(input_stream)
 
@@ -91,8 +91,12 @@ class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
         #name, _ = os.path.splitext(file_object.filename)
         #if not name.endswith("_skew"):
         #    return file_object
-
-        return octoprint.filemanager.util.StreamWrapper(file_object.filename, GSkewer(file_object.stream(), 0, 0, 0))
+		
+		xytan = self._settings.get(["xytan"])
+		yztan = self._settings.get(["yztan"])
+		xztan = self._settings.get(["xztan"])
+		
+        return octoprint.filemanager.util.StreamWrapper(file_object.filename, GSkewer(file_object.stream(), xytan, yztan, xztan))
 
     def get_settings_defaults(self):
         return dict(xytan="0", yztan="0", xztan="0")
