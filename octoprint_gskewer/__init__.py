@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import absolute_import, unicode_literals
 import re
 import octoprint.plugin
 import octoprint.filemanager
@@ -7,13 +8,13 @@ import octoprint.filemanager.util
 class gskewer(octoprint.filemanager.util.LineProcessorStream):
     def __init__(self, input_stream, xytan, yztan, zxtan):
         super(input_stream)
-        
+
         self.xytan = xytan
         self.yztan = yztan
         self.zxtan = zxtan
-        
+
         if not zxtan == 0:
-        print('The ZX error is set to', zxtan, 'degrees')
+            print('The ZX error is set to', zxtan, 'degrees')
 
         if xytan == 0.0 and yztan == 0.0 and zxtan == 0.0:
             print('No skew parameters provided. Nothing will be done.')
@@ -25,13 +26,13 @@ class gskewer(octoprint.filemanager.util.LineProcessorStream):
         xin = 0.0
         yin = 0.0
         zin = 0.0
-        
+
         #if os.path.isfile(outname):
         #os.remove(outname)
 
         #outfile = open(outname, 'a')
-        
-        
+
+
     def process_line(self, line):
         gmatch = re.match(r'G[0-1]', line, re.I)
         if gmatch:
@@ -79,7 +80,7 @@ class gskewer(octoprint.filemanager.util.LineProcessorStream):
         else:
             print('Skipping, not a movement.', line)
             return line
-        
+
 class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.SettingsPlugin):
     def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
@@ -92,24 +93,23 @@ class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
         #    return file_object
 
         return octoprint.filemanager.util.StreamWrapper(file.object.filename, GSkewer(file_object.stream(), 0, 0, 0))
-    
+
     def get_settings_defaults(self):
         return dict(xytan="0", yztan="0", xztan="0")
-    def get_template_vars(self):
-        return dict(xytan=self._settings.get(["xytan"]),
-                    yztan=self._settings.get(["yztan"]),
-                    xztan=self._settings.get(["xztan"]))
+
+    def get_template_configs(self):
+        return [dict(type="settings", custom_bindings=False)]
 
 __plugin_pythoncompat__ = ">=3.7,<4"
 
 def __plugin_load__():
     plugin = GSkewerPlugin()
-    
+
     global __plugin_implementation__
     __plugin_implementation__ = plugin
-    
+
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.filemanager.preprocessor": skew_gcode
+        "octoprint.filemanager.preprocessor": plugin.skew_gcode
     }
 
