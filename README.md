@@ -26,7 +26,7 @@ The initial six measurements can be simplified to a tangent argument by dividing
 
 OctoPrint Gskewer can currently only be installed manually using this URL:
 
-    https://github.com/you/OctoPrint-Gskewer/archive/master.zip
+    https://github.com/Kranex/octoprint-gskewer/archive/master.zip
 
 TODO: Properly explain installation steps and get Gskewer listed in the OctoPrint plugin repo.
 
