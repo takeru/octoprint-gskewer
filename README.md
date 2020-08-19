@@ -1,7 +1,7 @@
 # About Gskewer
-Gskewer is a tool to skew transform gcode file coordinates to account for axis misalignment of a 3D printer.
+This is the OctoPrint plugin version of Gskewer; a tool to skew transform gcode file coordinates to account for axis misalignment of a 3D printer.
 
-In order to use Gskewer you will need to print a test cube, take accurate measurements of the cube, then input those measurements as arguments for Gskewer. 
+In order to use Gskewer you will need to print a test cube, take accurate measurements of the cube, then input those measurements into the Gskewer settings page of OctoPrint. 
 
 The G-code file to be modified, the measured error (in mm), and the distance from zero where the measurement was taken is then entered into skew.py before being run.
 
@@ -22,42 +22,16 @@ You will end up with six measurements/arguments: xylen, xyerr, yzlen, yzerr, zxl
 
 The initial six measurements can be simplified to a tangent argument by dividing the error by length. (ie: xyerr/xylen=xytan) The three tangent arguments are: xytan, yztan, and zxtan.
 
+# Installing Gskewer
+
+OctoPrint Gskewer can currently only be installed manually using this URL:
+
+    https://github.com/you/OctoPrint-Gskewer/archive/master.zip
+
+TODO: Properly explain installation steps and get Gskewer listed in the OctoPrint plugin repo.
 
 # Using Gskewer
-`gskewer [arguements] file`
 
-Gskewer will automatically generate a new gcode file with "-skewed" added to the file name. If the output file name already exists gskewer will delete the existing file and write a new one.
+Gskewer will automatically replace uploaded or generated Gcode with a skewed version using the settings provided in the OctoPrint settings menu. Changing the settings will not correct previously uploaded or generated Gcode, the original unskewed versions of these files will need to be uploaded again to be skewed.
 
-### Examples
-
-`gskewer --xyerr 1.2 --xylen 80 Cube80mm.gcode` will adjust the X coordinate proportionally by -1.2 mm for every 80mm in the Y coordinate. Also, only the XY plane is affected as other arguements are not used. The output file will be "Cube80mm-skewed.gcode".
-
-`gskewer --xytan 0.015 Cube80mm.gcode` is equivalent to the example above, as `xytan = xyerr / xylen`.
-
-### Gskewer Arguments
-`--xyerr`
-	Error in the X-axis for the XY pair in mm. (This argument cannot be used with "xytan")
-
-`--xylen`
-	Length of the test cube side where the "xyerr" measurement was taken.
-
-`--xytan`
-	The error in the ZX pair as a tangent. (zxerr/zxlen)
-
-`--yzerr`
-	Error in the Y-axis for the YZ pair in mm. (This argument cannot be used with "yztan")
-
-`--yzlen`
-	Length of the test cube side where the "yzerr" measurement was taken.
-
-`--yztan`
-	The error in the YZ pair as a tangent. (yzerr/yzlen)
-
-`--zxerr`
-	Error in the Z-axis for the ZX pair in mm. (This argument cannot be used with "zxtan")
-
-`--zxlen`
-	Length of the test cube side where the "zxerr" measurement was taken.
-
-`--zxtan`
-	The error in the ZX pair as a tangent. (zxerr/zxlen)
+Currently only `xytan`, `xztan` and `yztan` can be set in the settings menu. These are easly calculated using the above instructions. In the future I may implement a more convenient method of fine tuning the skew parameters however for now this appears to works just fine.
