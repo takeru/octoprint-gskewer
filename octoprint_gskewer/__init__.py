@@ -1,79 +1,115 @@
-# coding=utf-8
-from __future__ import absolute_import
-
-### (Don't forget to remove me)
-# This is a basic skeleton for your plugin's __init__.py. You probably want to adjust the class name of your plugin
-# as well as the plugin mixins it's subclassing from. This is really just a basic skeleton to get you started,
-# defining your plugin as a template plugin, settings and asset plugin. Feel free to add or remove mixins
-# as necessary.
-#
-# Take a look at the documentation on what other plugin mixins are available.
-
+#!/usr/bin/env python3
+import re
 import octoprint.plugin
+import octoprint.filemanager
+import octoprint.filemanager.util
 
-class GskewerPlugin(octoprint.plugin.SettingsPlugin,
-                    octoprint.plugin.AssetPlugin,
-                    octoprint.plugin.TemplatePlugin):
+class gskewer(octoprint.filemanager.util.LineProcessorStream):
+    def __init__(self, input_stream, xytan, yztan, zxtan):
+        super(input_stream)
+        
+        self.xytan = xytan
+        self.yztan = yztan
+        self.zxtan = zxtan
+        
+        if not zxtan == 0:
+        print('The ZX error is set to', zxtan, 'degrees')
 
-	##~~ SettingsPlugin mixin
+        if xytan == 0.0 and yztan == 0.0 and zxtan == 0.0:
+            print('No skew parameters provided. Nothing will be done.')
 
-	def get_settings_defaults(self):
-		return dict(
-			# put your plugin's default settings here
-		)
+        filename = args.file
 
-	##~~ AssetPlugin mixin
+        outname = re.sub(r'.gcode', '-skewed.gcode', filename)
 
-	def get_assets(self):
-		# Define your plugin's asset files to automatically include in the
-		# core UI here.
-		return dict(
-			js=["js/gskewer.js"],
-			css=["css/gskewer.css"],
-			less=["less/gskewer.less"]
-		)
+        xin = 0.0
+        yin = 0.0
+        zin = 0.0
+        
+        #if os.path.isfile(outname):
+        #os.remove(outname)
 
-	##~~ Softwareupdate hook
+        #outfile = open(outname, 'a')
+        
+        
+    def process_line(self, line):
+        gmatch = re.match(r'G[0-1]', line, re.I)
+        if gmatch:
+            print('line was a G0/G1 command!')
 
-	def get_update_information(self):
-		# Define the configuration for your plugin to use with the Software Update
-		# Plugin here. See https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html
-		# for details.
-		return dict(
-			gskewer=dict(
-				displayName="Gskewer Plugin",
-				displayVersion=self._plugin_version,
+            # load the incoming X coordinate into a variable. Previous value will be used if new value is not found.
+            xsrch = re.search(r'[xX]\d*\.*\d*', line, re.I)
+            if xsrch:  # if an X value is found
+                # Strip the letter from the coordinate.
+                xin = float(re.sub(r'[xX]', '', xsrch.group()))
 
-				# version check: github repository
-				type="github_release",
-				user="you",
-				repo="OctoPrint-Gskewer",
-				current=self._plugin_version,
+            # load the incoming Y coordinate into a variable. Previous value will be used if new value is not found.
+            ysrch = re.search(r'[yY]\d*\.*\d*', line, re.I)
+            if ysrch:
+                # Strip the letter from the coordinate.
+                yin = float(re.sub(r'[yY]', '', ysrch.group()))
 
-				# update method: pip
-				pip="https://github.com/you/OctoPrint-Gskewer/archive/{target_version}.zip"
-			)
-		)
+            # load the incoming Z coordinate into a variable. Previous value will be used if new value is not found.
+            zsrch = re.search(r'[zZ]\d*\.*\d*', line, re.I)
+            if zsrch:
+                # Strip the letter from the coordinate.
+                zin = float(re.sub(r'[zZ]', '', zsrch.group()))
 
+            # calculate the corrected/skewed XYZ coordinates
+            xout = round(xin - yin * xytan, 3)
+            yout = round(yin - zin * yztan, 3)
+            xout = round(xout - zin * zxtan, 3)
+            # Z coodinates must remain the same to prevent layers being tilted!
+            zout = zin
 
-# If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
-# ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
-# can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "Gskewer Plugin"
+            lineout = line
+            print('old line:', lineout)
 
-# Starting with OctoPrint 1.4.0 OctoPrint will also support to run under Python 3 in addition to the deprecated
-# Python 2. New plugins should make sure to run under both versions for now. Uncomment one of the following
-# compatibility flags according to what Python versions your plugin supports!
-#__plugin_pythoncompat__ = ">=2.7,<3" # only python 2
-#__plugin_pythoncompat__ = ">=3,<4" # only python 3
-#__plugin_pythoncompat__ = ">=2.7,<4" # python 2 and 3
+            if xsrch:
+                lineout = re.sub(r'[xX]\d*\.*\d*', 'X' + str(xout), lineout)
+
+            if ysrch:
+                lineout = re.sub(r'[yY]\d*\.*\d*', 'Y' + str(yout), lineout)
+
+            if zsrch:
+                lineout = re.sub(r'[zZ]\d*\.*\d*', 'Z' + str(zout), lineout)
+
+            print('new line: ', lineout)
+            return lineout
+        else:
+            print('Skipping, not a movement.', line)
+            return line
+        
+class GSkewerPlugin(octoprint.plugin.TemplatePlugin,
+                    octoprint.plugin.SettingsPlugin):
+    def skew_gcode(path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
+        if not octoprint.filemanager.valid_file_type(path, type="gcode"):
+            return file_object
+
+        #import os
+        #name, _ = os.path.splitext(file_object.filename)
+        #if not name.endswith("_skew"):
+        #    return file_object
+
+        return octoprint.filemanager.util.StreamWrapper(file.object.filename, GSkewer(file_object.stream(), 0, 0, 0))
+    
+    def get_settings_defaults(self):
+        return dict(xytan="0", yztan="0", xztan="0")
+    def get_template_vars(self):
+        return dict(xytan=self._settings.get(["xytan"]),
+                    yztan=self._settings.get(["yztan"]),
+                    xztan=self._settings.get(["xztan"]))
+
+__plugin_pythoncompat__ = ">=3.7,<4"
 
 def __plugin_load__():
-	global __plugin_implementation__
-	__plugin_implementation__ = GskewerPlugin()
-
-	global __plugin_hooks__
-	__plugin_hooks__ = {
-		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
-	}
+    plugin = GSkewerPlugin()
+    
+    global __plugin_implementation__
+    __plugin_implementation__ = plugin
+    
+    global __plugin_hooks__
+    __plugin_hooks__ = {
+        "octoprint.filemanager.preprocessor": skew_gcode
+    }
 
