@@ -34,6 +34,12 @@ class GSkewer(octoprint.filemanager.util.LineProcessorStream):
 
     def process_line(self, encoded):
         line = encoded.decode("utf-8")
+
+        comment = None
+        parts = line.split(";", 1)
+        if len(parts) == 2:
+          line, comment = parts
+
         gmatch = re.match(r'G[0-1]', line, re.I)
         if gmatch:
             # print('line was a G0/G1 command!', line)
@@ -74,6 +80,9 @@ class GSkewer(octoprint.filemanager.util.LineProcessorStream):
 
             if zsrch:
                 lineout = re.sub(r'[zZ]-?\d*\.*\d*', 'Z' + str(zout), lineout)
+
+            if comment != None:
+                lineout = lineout + ";" + comment
 
             #print('new line: ', lineout)
             return lineout.encode("utf-8")
